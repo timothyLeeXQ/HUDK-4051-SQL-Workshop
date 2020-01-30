@@ -1,37 +1,47 @@
 ---
-title: "sql-workshop"
-author: "Charles Lang"
-date: "10/16/2019"
+title: "sql-workshop Response"
+author: "Timothy Lee"
+date: "29/01/2020"
 output: html_document
 ---
 
+# Connecting to and populating the AWS database
+
 ## Connect to AMW MySQL Database
+
+*Database connection details have been saved in a .RData file that has been added to .gitignore. Details available on request*
+
+
 ```{r}
 #install.packages("DBI", "RMySQL")
 
 library(DBI)
 library(RMySQL)
 
-db_user <- 'admin'
-db_password <- 'testsql!'
-db_name <- 'oudb'
-db_host <- 'sqltest.clh43re5lq5h.us-east-1.rds.amazonaws.com'
-db_port <- 3306
+load(file = "connect.RData")
 
-mydb <- dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, host = db_host, port = db_port)
+mydb <- dbConnect(MySQL(),
+                  user = db_user,
+                  password = db_password,
+                  dbname = db_name,
+                  host = db_host,
+                  port = db_port)
 
 summary(mydb)
 ```
 
 ## Load OU Data
+
+*Data used here have been added to .gitignore. Data can be downloaded from https://analyse.kmi.open.ac.uk/open_dataset*
+
 ```{r}
 #Student demographic data
-studentInfo <- read.csv("studentInfo.csv", header = TRUE)
+studentInfo <- read.csv("anonymisedData/studentInfo.csv", header = TRUE)
 #Student assessment data
-studentAssessment <- read.csv("studentAssessment.csv", header = TRUE)
+studentAssessment <- read.csv("anonymisedData/studentAssessment.csv", header = TRUE)
 #Course data
-courses <- read.csv("courses.csv", header = TRUE)
-studentRegistration <- read.csv("studentRegistration.csv", header = TRUE)
+courses <- read.csv("anonymisedData/courses.csv", header = TRUE)
+studentRegistration <- read.csv("anonymisedData/studentRegistration.csv", header = TRUE)
 ```
 
 ## Write data to the DB using the DBI package
@@ -50,13 +60,48 @@ dbListTables(mydb)
 
 #Read a particular table
 dbReadTable(mydb, 'studentInfo')
+```
 
-#EXERCISE 1
-#Make two toy data sets with at least three variables and at least 30 rows each in them. Have a mix of numeric and character variables. Transfer these dataframes to your SQL database using the DBI commands. Name the tables whatever you like.
+
+## EXERCISE 1
+
+Make two toy data sets with at least three variables and at least 30 rows each in them. Have a mix of numeric and character variables. Transfer these dataframes to your SQL database using the DBI commands. Name the tables whatever you like.
+
+```{r}
+
+nonsense_1 <- sample(1:10000, size = 32593, replace = TRUE)
+nonsense_2 <- sample(10001:20000, size = 32593, replace = TRUE)
+nonsense_3 <- sample(20001:30000, size = 32593, replace = TRUE)
+nonsense_4 <- sample(30001:40000, size = 32593, replace = TRUE)
+nonsense_5 <- sample(40001:50000, size = 32593, replace = TRUE)
+nonsense_6 <- sample(50001:60000, size = 32593, replace = TRUE)
+
+nonsense_df_1 <- data.frame(id_student = studentInfo$id_student, nonsense_1, nonsense_2, nonsense_3)
+nonsense_df_2 <- data.frame(id_student = studentInfo$id_student, nonsense_4, nonsense_5, nonsense_6)
+
+dbWriteTable(mydb, "nonsense_df_1", nonsense_df_1)
+dbWriteTable(mydb, "nonsense_df_2", nonsense_df_2)
 
 ```
 
+```{sql, connection="mydb"}
+#--Checking if it worked
+SHOW TABLES;
+```
+
+# Interacting with the database
+
 ## Getting into SQL - READING
+
+```{sql, connection="mydb"}
+SELECT *
+FROM studentInfo
+LIMIT 10;
+
+```
+
+Alternatively using DBI::
+
 ```{r}
 #Query a portion of the database (always returns dataframe)
 dbGetQuery(mydb, "SELECT * FROM studentInfo LIMIT 10;")
@@ -79,12 +124,29 @@ dbGetQuery(mydb, "SELECT COUNT(score) FROM studentAssessment WHERE score > 50;")
 #Using an AND statement
 dbGetQuery(mydb, "SELECT COUNT(*) FROM studentAssessment WHERE score > 50 AND id_assessment = '1752';")
 
+```
+
+```{sql, connection="mydb"}
 #EXERCISE 2
 #Read one of your toy data tables, make sure the output is ordered in descending order, you rename one of the variables and the output is limited to the first 20 rows.
 
 #Read the other table according to a condition of one of the variables.
 
+SELECT id_student AS 'Student ID', nonsense_1 AS 'Nonsense'
+FROM nonsense_df_1
+ORDER BY nonsense_1 DESC
+LIMIT 20;
+
 ```
+```{sql, connection="mydb"}
+SELECT id_student AS 'Student ID', nonsense_5 AS 'Nonsense'
+FROM nonsense_df_2
+WHERE nonsense_5 > 45000
+ORDER BY id_student
+LIMIT 20;
+
+```
+
 
 ## Getting into SQL - UPDATING
 ```{r}
@@ -119,11 +181,77 @@ dbGetQuery(mydb, "DELETE FROM studentAssessment WHERE id_student = 1;")
 
 dbGetQuery(mydb, "SELECT * FROM studentAssessment ORDER BY id_student LIMIT 10;")
 
-#EXERCISE 3
-#Insert a new row in one of your toy data tables leaving one variable empty. Change one value in your other table. Display your new tables. Delete the row you edited and the row you inserted. 
-
-
 ```
+
+## EXERCISE 3
+Insert a new row in one of your toy data tables leaving one variable empty.
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsense_df_1
+LIMIT 5;
+```
+
+
+```{sql, connection="mydb"}
+INSERT INTO nonsense_df_1 (row_names, id_student, nonsense_1, nonsense_2, nonsense_3)
+VALUES (0, 1, 2, 3, 4); 
+```
+
+Change one value in your other table.
+
+```{sql, connection="mydb"}
+UPDATE nonsense_df_2
+SET nonsense_4 = 5
+WHERE row_names = 1;
+```
+
+Display your new tables.
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsense_df_1
+WHERE row_names < 5
+ORDER BY row_names
+LIMIT 5;
+```
+  
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsense_df_2
+WHERE row_names < 5
+ORDER BY row_names
+LIMIT 5;
+```
+
+Delete the row you edited and the row you inserted. 
+
+```{sql, connection="mydb"}
+DELETE FROM nonsense_df_1
+WHERE row_names = 0;
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsense_df_1
+WHERE row_names < 5
+ORDER BY row_names
+LIMIT 5;
+```
+
+```{sql, connection="mydb"}
+DELETE FROM nonsense_df_2
+WHERE row_names = 1;
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsense_df_2
+WHERE row_names < 5
+ORDER BY row_names
+LIMIT 5;
+```
+
 
 ## Add/Deleting Table
 ```{r}
@@ -142,7 +270,7 @@ dbGetQuery(mydb, "INSERT INTO test VALUES ( 9, 'Frank' );")
 
 dbGetQuery(mydb, "SELECT * FROM test;")
 
-#Inserting a NULL row
+#Inserting a NULL row - this produces an error
 dbGetQuery(mydb, "INSERT INTO test DEFAULT VALUES;")
 
 dbGetQuery(mydb,"INSERT INTO test (score, student) SELECT score, id_student FROM studentAssessment;")
@@ -155,9 +283,45 @@ dbGetQuery(mydb, "SELECT * FROM test;") #This should produce an error
 #Delete a table if it exists
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test;")
 
-#EXERCISE 4
-#Create a table that is exactly the same as your first toy data table but this time use SQL commands. Display your new table. Then delete the original table. 
+```
 
+## EXERCISE 4
+Create a table that is exactly the same as your first toy data table but this time use SQL commands. Display your new table. Then delete the original table.
+
+```{sql, connection="mydb"}
+CREATE TABLE nonsensedf1 (
+row_names TEXT,
+id_student INTEGER,
+nonsense_1 INTEGER,
+nonsense_2 INTEGER,
+nonsense_3 INTEGER
+);
+```
+
+```{sql, connection="mydb"}
+INSERT INTO nonsensedf1
+SELECT *
+FROM nonsense_df_1;
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf1
+LIMIT 5;
+```
+
+```{sql, connection="mydb"}
+SELECT CoUNT(*)
+FROM nonsensedf1;
+```
+
+
+```{sql, connection="mydb"}
+DROP TABLE nonsense_df_1;
+```
+
+```{sql, connection="mydb"}
+SHOW TABLES;
 ```
 
 # NULL Value
@@ -165,10 +329,10 @@ dbGetQuery(mydb, "DROP TABLE IF EXISTS test;")
 #NULL is a state (similar to R), represents the lack of a value. But is not compatible with R backend so this code doesn't work as part of dbGetQuery()
 
 #This doesn't work because NULL is not a value
-SELECT * FROM test WHERE score = NULL;
+dbGetQuery(mydb, "SELECT * FROM test WHERE score = NULL;")
 
 #Instead use
-SELECT * FROM test WHERE score is NULL;
+dbGetQuery(mydb, "SELECT * FROM test WHERE score is NULL;")
 
 ```
 
@@ -208,11 +372,42 @@ dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES ('1', 'A');")
 dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (NULL, 'A');")
 dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (NULL, 'A');")
 
-#EXERCISE 5
-#Recreate one of your toy data tables with the constraint that for one of the integer variablesthe default value will be zero. Test your table by inserting some empty values. Display your new tables. Then delete your table.  
-
 ```
 
+## EXERCISE 5
+Recreate one of your toy data tables with the constraint that for one of the integer variables the default value will be zero. Test your table by inserting some empty values. Display your new tables. Then delete your table.  
+
+```{sql, connection="mydb"}
+CREATE TABLE nonsensedf2 (
+row_names TEXT,
+id_student INTEGER,
+nonsense_4 INTEGER DEFAULT 0,
+nonsense_5 INTEGER,
+nonsense_6 INTEGER
+);
+```
+
+```{sql, connection="mydb"}
+INSERT INTO nonsensedf2 
+SELECT *
+FROM nonsense_df_2;
+```
+
+```{sql, connection="mydb"}
+INSERT INTO nonsensedf2 ()
+VALUES ();
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf2
+ORDER BY nonsense_4
+LIMIT 10;
+```
+
+```{sql, connection="mydb"}
+DROP TABLE IF EXISTS nonsensedf2;
+```
 
 # Adding a column with a default value
 ```{r}
@@ -224,10 +419,39 @@ dbGetQuery(mydb, "SELECT * FROM studentAssessment LIMIT 10;")
 #Delete a column
 dbGetQuery(mydb, "ALTER TABLE studentAssessment DROP COLUMN email;")
 
-#EXERCISE 6
-#Add a column to one of your toy data tables with a default value of 3. Display your new table. Delete this column.
 ```
 
+## EXERCISE 6
+Add a column to one of your toy data tables with a default value of 3. Display your new table. Delete this column.
+
+```{sql, connection="mydb"}
+SELECT * 
+FROM nonsensedf1
+LIMIT 5;
+```
+
+```{sql, connection="mydb"}
+ALTER TABLE nonsensedf1 ADD nonsense_7 INTEGER DEFAULT 3;
+
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf1 
+LIMIT 10;
+
+```
+```{sql, connection="mydb"}
+ALTER TABLE nonsensedf1 DROP nonsense_7;
+
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf1 
+LIMIT 10;
+
+```
 
 # ID Columns
 ```{r}
@@ -244,10 +468,31 @@ dbGetQuery(mydb, "SELECT * FROM test2;")
 
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test2;")
 
-#EXERCISE 7
-#Create a new table with four variables and a primary key that is a sequential id value.
+```
+
+## EXERCISE 7
+Create a new table with four variables and a primary key that is a sequential id value.
+
+```{sql, connection="mydb"}
+CREATE TABLE exercise7 (
+id INTEGER PRIMARY KEY AUTO_INCREMENT,
+var1 TEXT NOT NULL,
+var2 INTEGER DEFAULT 10,
+var3 FLOAT
+)
 
 ```
+
+```{sql, connection="mydb"}
+INSERT INTO exercise7 (var1) VALUES ('lol');
+
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM exercise7;
+```
+
 
 ## Filtering (WHERE)
 ```{r}
@@ -274,8 +519,30 @@ dbGetQuery(mydb, "SELECT id_student, gender, region FROM studentInfo WHERE regio
 #IN
 dbGetQuery(mydb, "SELECT id_student, gender, region FROM studentInfo WHERE region IN ('Wales','Ireland');")
 
-#EXERCISE 8
-#Query one of your original toy data tables, for two different conditions. 
+```
+
+## EXERCISE 8
+Query one of your original toy data tables, for two different conditions. 
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf1 
+WHERE nonsense_1 > 5000 AND nonsense_2 < 12000;
+
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf1 
+WHERE row_names IN ('5','8','15000','28');
+
+```
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsensedf1 
+WHERE row_names LIKE '2___%'
+LIMIT 10;
 
 ```
 
@@ -285,8 +552,30 @@ dbGetQuery(mydb, "SELECT DISTINCT region FROM studentInfo;")
 
 dbGetQuery(mydb, "SELECT DISTINCT region, gender FROM studentInfo;")
 
-#EXERCISE 9
-#Insert a duplicate row into one of your toy data tables. Then query the table without including duplicates.
+```
+## EXERCISE 9
+Insert a duplicate row into one of your toy data tables. Then query the table without including duplicates.
+
+```{sql, connection="mydb"}
+INSERT INTO nonsensedf1 (row_names, id_student, nonsense_1, nonsense_2, nonsense_3)
+VALUES (2000, 550381, 1517, 16882, 24415);
+```
+
+```{sql, connection="mydb"}
+SELECT row_names, id_student
+FROM nonsensedf1 
+WHERE row_names LIKE '200_'
+ORDER BY row_names
+LIMIT 5;
+
+```
+
+```{sql, connection="mydb"}
+SELECT DISTINCT row_names, id_student
+FROM nonsensedf1 
+WHERE row_names LIKE '200_'
+ORDER BY row_names
+LIMIT 5;
 
 ```
 
@@ -360,9 +649,40 @@ dbGetQuery(mydb, "SELECT * FROM left_table
            UNION
            SELECT * FROM right_table;")
 
-
-#EXERCISE 10
-# Create an a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other. 
-
 ```
 
+## EXERCISE 10
+Create a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other. 
+
+```{sql, connection="mydb"}
+UPDATE nonsense_df_2
+SET row_names = row_names - 10000;
+```
+
+```{sql, connection="mydb"}
+SELECT row_names
+FROM nonsense_df_2
+ORDER BY row_names DESC
+LIMIT 5;
+```
+
+```{sql, connection="mydb"}
+SELECT row_names
+FROM nonsensedf1
+ORDER BY row_names DESC
+LIMIT 5;
+```
+
+```{sql, connection="mydb"}
+SELECT SUM(row_names)
+FROM nonsensedf1;
+```
+
+```{sql, connection="mydb"}
+SELECT first.row_names, second.row_names, first.id_student, second.id_student
+FROM nonsensedf1 AS first
+RIGHT JOIN nonsense_df_2 AS second
+ON first.row_names = second.row_names
+WHERE first.id_student = NULL
+LIMIT 100;
+```
