@@ -194,8 +194,8 @@ LIMIT 5;
 
 
 ```{sql, connection="mydb"}
-INSERT INTO nonsense_df_1 (row_names, id_student, nonsense_1, nonsense_2, nonsense_3)
-VALUES (0, 1, 2, 3, 4); 
+INSERT INTO nonsense_df_1 (row_names, nonsense_1, nonsense_2, nonsense_3)
+VALUES (0, 2, 3, 4);
 ```
 
 Change one value in your other table.
@@ -215,7 +215,7 @@ WHERE row_names < 5
 ORDER BY row_names
 LIMIT 5;
 ```
-  
+
 ```{sql, connection="mydb"}
 SELECT *
 FROM nonsense_df_2
@@ -224,12 +224,14 @@ ORDER BY row_names
 LIMIT 5;
 ```
 
-Delete the row you edited and the row you inserted. 
+Delete the row you edited and the row you inserted.
 
 ```{sql, connection="mydb"}
 DELETE FROM nonsense_df_1
 WHERE row_names = 0;
 ```
+
+Show it's gone:
 
 ```{sql, connection="mydb"}
 SELECT *
@@ -244,6 +246,8 @@ DELETE FROM nonsense_df_2
 WHERE row_names = 1;
 ```
 
+Show it's gone:
+
 ```{sql, connection="mydb"}
 SELECT *
 FROM nonsense_df_2
@@ -252,12 +256,28 @@ ORDER BY row_names
 LIMIT 5;
 ```
 
+Putting back the edited row that was deleted, so it returns to how it was from the start.
+
+```{sql, connection="mydb"}
+INSERT INTO nonsense_df_2 (row_names, id_student, nonsense_4, nonsense_5, nonsense_6)
+VALUES (1, 11391, 34148, 45793, 55204);
+```
+
+Show it's back:
+
+```{sql, connection="mydb"}
+SELECT *
+FROM nonsense_df_2
+WHERE row_names < 5
+ORDER BY row_names
+LIMIT 5;
+```
 
 ## Add/Deleting Table
 ```{r}
 #Creating a new table in SQL
 dbGetQuery(mydb,"CREATE TABLE test (
-  score INTEGER, 
+  score INTEGER,
   student TEXT
   );")
 
@@ -311,13 +331,14 @@ LIMIT 5;
 ```
 
 ```{sql, connection="mydb"}
-SELECT CoUNT(*)
+SELECT COUNT(*)
 FROM nonsensedf1;
 ```
 
 
 ```{sql, connection="mydb"}
-DROP TABLE nonsense_df_1;
+DROP TABLE nonsensedf1;
+#Dropping the new table instead of the 'original' (old) table - this maintains naming consistency between the two toy tables
 ```
 
 ```{sql, connection="mydb"}
@@ -340,14 +361,14 @@ dbGetQuery(mydb, "SELECT * FROM test WHERE score is NULL;")
 ```{r}
 #Create table where student column *cannot* be NULL
 dbGetQuery(mydb,"CREATE TABLE test2 (
-  score INTEGER, 
+  score INTEGER,
   student TEXT NOT NULL
   );")
 
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test2;")
 
 dbGetQuery(mydb,"CREATE TABLE test2 (
-   score INTEGER DEFAULT 0, 
+   score INTEGER DEFAULT 0,
    student TEXT
    );")
 
@@ -359,7 +380,7 @@ dbGetQuery(mydb, "SELECT * FROM test2;")
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test2;")
 
 dbGetQuery(mydb,"CREATE TABLE test2 (
-  score INTEGER UNIQUE, 
+  score INTEGER UNIQUE,
   student TEXT
   );")
 
@@ -388,7 +409,7 @@ nonsense_6 INTEGER
 ```
 
 ```{sql, connection="mydb"}
-INSERT INTO nonsensedf2 
+INSERT INTO nonsensedf2
 SELECT *
 FROM nonsense_df_2;
 ```
@@ -425,7 +446,7 @@ dbGetQuery(mydb, "ALTER TABLE studentAssessment DROP COLUMN email;")
 Add a column to one of your toy data tables with a default value of 3. Display your new table. Delete this column.
 
 ```{sql, connection="mydb"}
-SELECT * 
+SELECT *
 FROM nonsensedf1
 LIMIT 5;
 ```
@@ -437,7 +458,7 @@ ALTER TABLE nonsensedf1 ADD nonsense_7 INTEGER DEFAULT 3;
 
 ```{sql, connection="mydb"}
 SELECT *
-FROM nonsensedf1 
+FROM nonsensedf1
 LIMIT 10;
 
 ```
@@ -448,7 +469,7 @@ ALTER TABLE nonsensedf1 DROP nonsense_7;
 
 ```{sql, connection="mydb"}
 SELECT *
-FROM nonsensedf1 
+FROM nonsensedf1
 LIMIT 10;
 
 ```
@@ -457,7 +478,7 @@ LIMIT 10;
 ```{r}
 dbGetQuery(mydb,"CREATE TABLE test2 (
   id INTEGER AUTO_INCREMENT PRIMARY KEY, #Not standard syntax
-  score INTEGER, 
+  score INTEGER,
   student TEXT
   );")
 
@@ -522,25 +543,25 @@ dbGetQuery(mydb, "SELECT id_student, gender, region FROM studentInfo WHERE regio
 ```
 
 ## EXERCISE 8
-Query one of your original toy data tables, for two different conditions. 
+Query one of your original toy data tables, for two different conditions.
 
 ```{sql, connection="mydb"}
 SELECT *
-FROM nonsensedf1 
+FROM nonsensedf1
 WHERE nonsense_1 > 5000 AND nonsense_2 < 12000;
 
 ```
 
 ```{sql, connection="mydb"}
 SELECT *
-FROM nonsensedf1 
+FROM nonsensedf1
 WHERE row_names IN ('5','8','15000','28');
 
 ```
 
 ```{sql, connection="mydb"}
 SELECT *
-FROM nonsensedf1 
+FROM nonsensedf1
 WHERE row_names LIKE '2___%'
 LIMIT 10;
 
@@ -563,7 +584,7 @@ VALUES (2000, 550381, 1517, 16882, 24415);
 
 ```{sql, connection="mydb"}
 SELECT row_names, id_student
-FROM nonsensedf1 
+FROM nonsensedf1
 WHERE row_names LIKE '200_'
 ORDER BY row_names
 LIMIT 5;
@@ -572,7 +593,7 @@ LIMIT 5;
 
 ```{sql, connection="mydb"}
 SELECT DISTINCT row_names, id_student
-FROM nonsensedf1 
+FROM nonsensedf1
 WHERE row_names LIKE '200_'
 ORDER BY row_names
 LIMIT 5;
@@ -600,7 +621,7 @@ dbGetQuery(mydb,"SELECT
 ```{r}
 
 #This will take a while because of the architecture we are using
-dbGetQuery(mydb,"SELECT id_student, gender, region, date_registration
+dbGetQuery(mydb,"SELECT studentInfo.id_student, gender, region, date_registration
           FROM studentInfo
           JOIN studentRegistration
           ON studentInfo.id_student = studentRegistration.id_student
@@ -632,16 +653,16 @@ dbGetQuery(mydb, "INSERT INTO right_table VALUES ( 14, 'left 14');")
 dbGetQuery(mydb, "SELECT * FROM left_table;")
 dbGetQuery(mydb, "SELECT * FROM right_table;")
 
-dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table 
-           FROM left_table AS l 
+dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table
+           FROM left_table AS l
            JOIN right_table AS r ON l.id = r.id")
 
-dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table 
-           FROM left_table AS l 
+dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table
+           FROM left_table AS l
            RIGHT JOIN right_table AS r ON l.id = r.id")
 
-dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table 
-           FROM left_table AS l 
+dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table
+           FROM left_table AS l
            LEFT JOIN right_table AS r ON l.id = r.id")
 
 #Union
@@ -652,7 +673,7 @@ dbGetQuery(mydb, "SELECT * FROM left_table
 ```
 
 ## EXERCISE 10
-Create a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other. 
+Create a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other.
 
 ```{sql, connection="mydb"}
 UPDATE nonsense_df_2
@@ -673,16 +694,11 @@ ORDER BY row_names DESC
 LIMIT 5;
 ```
 
-```{sql, connection="mydb"}
-SELECT SUM(row_names)
-FROM nonsensedf1;
-```
 
 ```{sql, connection="mydb"}
-SELECT first.row_names, second.row_names, first.id_student, second.id_student
+SELECT first.row_names AS a, second.row_names, first.id_student, second.id_student
 FROM nonsensedf1 AS first
-RIGHT JOIN nonsense_df_2 AS second
+LEFT JOIN nonsense_df_2 AS second
 ON first.row_names = second.row_names
-WHERE first.id_student = NULL
-LIMIT 100;
+LIMIT 10;
 ```
