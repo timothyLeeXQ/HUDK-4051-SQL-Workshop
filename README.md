@@ -21,7 +21,8 @@ Mining](https://github.com/timothyLeeXQ/HUDK-4050-Syllabus)
 
 [Slide Deck](https://github.com/learning-analytics-curriculum-teaching/sql-workshop/blob/master/sql_workshop.pdf)
 
-## Create MySQL Instance on Amazon Web Services
+##Instructor Notes
+### Create MySQL Instance on Amazon Web Services
 
 * Log into your [AWS Management Console](https://console.aws.amazon.com)
 * Locate `RDS` under the `Databases` heading
@@ -37,7 +38,7 @@ Mining](https://github.com/timothyLeeXQ/HUDK-4050-Syllabus)
 * Uncheck `Automatic backups`
 * Click `Create database`
 
-## Modify Security Group
+### Modify Security Group
 
 * Under `Security Groups` click `Inbound` and then `Edit`
 * Add the rule `SQL/Aurora` on `Port 3306` with the `Connection` of `MyIP`
