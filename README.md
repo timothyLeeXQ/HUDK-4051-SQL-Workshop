@@ -21,7 +21,8 @@ Mining](https://github.com/timothyLeeXQ/HUDK-4050-Syllabus)
 
 [Slide Deck](https://github.com/learning-analytics-curriculum-teaching/sql-workshop/blob/master/sql_workshop.pdf)
 
-##Instructor Notes
+## Instructor Notes
+
 ### Create MySQL Instance on Amazon Web Services
 
 * Log into your [AWS Management Console](https://console.aws.amazon.com)
